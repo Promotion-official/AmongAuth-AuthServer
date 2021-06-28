@@ -26,6 +26,3 @@ async def login(body : LoginForm):
 
     return RedirectResponse(redirect_url, headers={"Authorization" : encoded_data}, status_code=307)
 
-@app.post('/')
-def main(authorization: Optional[str] = Header(None)):
-    return authorization
