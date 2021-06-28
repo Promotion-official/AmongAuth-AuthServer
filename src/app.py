@@ -1,6 +1,5 @@
-from fastapi import FastAPI, Header
+from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
-from typing import Optional
 
 import jwt
 
