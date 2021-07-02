@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import RedirectResponse
 
 import jwt
@@ -14,9 +14,18 @@ async def login(body : LoginForm):
     email = body.email
     pw = body.pw
 
+    if email == None or pw == None:
+        HTTPException(status_code=400, detail="Bad Request")
+
     # API 연동
-    data = await HTMLGetter(Config.API_SERVER).set_data(email = email, pw = pw).get_json()
-    data = {"pw" : pw, "email" : email} # API 서버 있을시에 해당 부분 주석 필요
+    try:
+        data = await HTMLGetter(Config.API_SERVER).set_data(email = email, pw = pw).get_json()
+    except Exception as e:
+        print(e)
+        raise HTTPException(status_code=500, detail="API Server Error")
+
+    # data = {"pw" : pw, "email" : email} # API 서버 있을시에 해당 부분 주석 필요
+
     encoded_data = jwt.encode(data, Config.JWT_SECRET, algorithm=Config.JWT_ALGORITHEM) # 토큰화
     redirect_url = body.redirect_url# 리다이렉트 url 지정
 
