@@ -26,3 +26,33 @@ python src/main.py -R -P 5225
 
 5. 다음으로 요청을 보내, 서버가 잘 작동하는지 확인을 한다.
 
+## API 명세서
+
+### POST /login
+- request
+```json
+{
+    "email" : "qudwls185@naver.com",
+    "pw" : "1234",
+    "redirect_url" : "http://0.0.0.0:4242/rb"
+}
+```
+
+- 302 Found, 200 Succes
+```sh
+GET /rb?code=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJwdyI6IjEyMzQiLCJlbWFpbCI6InF1ZHdsczE4NUBuYXZlci5jb20ifQ.L-zOOPQwhgQHAubM0vc9eIy58LK3Gu4gC08IrAX0YDA
+```
+
+- 400 Bad Request
+```json
+{
+    "detail": "Bad Request"
+}
+```
+
+- 500 Intenal Server Error
+```json
+{
+    "detail": "API Server Error"
+}
+```
