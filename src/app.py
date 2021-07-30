@@ -3,6 +3,7 @@ from fastapi.responses import RedirectResponse
 
 import re
 import jwt
+import datetime
 
 from misc import HTMLGetter, Config, LoginForm
 
@@ -23,20 +24,17 @@ async def login(body : LoginForm):
 
     # API 연동
     try:
-        data = await HTMLGetter(Config.API_SERVER).set_data(email = email, pw = pw).get_json()
+        data : dict() = await HTMLGetter(Config.API_SERVER).set_data(email = email, pw = pw).get_json()
     except Exception as e:
         print(e)
         raise HTTPException(status_code=500, detail="API Server Error")
 
     # data = {"pw" : pw, "email" : email} # API 서버 있을시에 해당 부분 주석 필요
-
+    data["exp"] = datetime.datetime.utcnow() + datetime.timedelta(seconds=600) # 10분의 기한
     encoded_data = jwt.encode(data, Config.JWT_SECRET, algorithm=Config.JWT_ALGORITHEM) # 토큰화
     redirect_url = body.redirect_url# 리다이렉트 url 지정
 
     # return body setting
-    body.email = ""
-    body.pw = ""
-
     # 307코드로 리다이렉트
     return RedirectResponse(f"{redirect_url}?code={encoded_data}", status_code=302)
 
