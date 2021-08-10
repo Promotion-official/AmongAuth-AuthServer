@@ -11,6 +11,6 @@ class HTMLGetter:
         }
         async with aiohttp.ClientSession() as cs:
             html = await cs.post(
-                self.url, headers=headers, json={"id": kwargs["id"], "pw": kwargs["pw"]}
+                self.url, headers=headers, json=kwargs
             )
             return await html.json()
