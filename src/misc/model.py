@@ -6,7 +6,7 @@ class GetCodeForm(BaseModel):
     email: str
     redirect_url: str
     client_id: str
-    status: str
+    state: str
 
 
 class GetTokenForm(BaseModel):

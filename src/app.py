@@ -34,6 +34,8 @@ async def get_code(body: GetCodeForm):
 
     # TODO DB 연동하여, 각 이메일과 client_id 쌍을 만들어, 액세스토큰 중복 체크
 
+
+    # region replace to redis
     # data = {"pw" : pw, "email" : email} # API 서버 있을시에 해당 부분 주석 필요
     data["exp"] = datetime.datetime.utcnow() + datetime.timedelta(
         seconds=600
@@ -43,12 +45,15 @@ async def get_code(body: GetCodeForm):
     encoded_data = jwt.encode(
         data, key=Config.JWT_SECRET, algorithm=Config.JWT_ALGORITHEM
     )  # 토큰화
+    # endregion
+
+
     # TODO code의 방식을 redis로 옮길 필요 다분
-
-    redirect_url = body.redirect_url  # 리다이렉트 url 지정
-
+    state = f"&state={body.state}"if body.state else ""
+    redirect_url = f"{body.redirect_url}?code={encoded_data}{state}"  # 리다이렉트 url 지정
+    
     # 302코드로 리다이렉트
-    return RedirectResponse(f"{redirect_url}?code={encoded_data}", status_code=302)
+    return RedirectResponse(redirect_url, status_code=302)
 
 
 @app.post("/get_token")
