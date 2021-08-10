@@ -1,3 +1,4 @@
+from aiohttp import client
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -68,9 +69,11 @@ async def get_token(body: GetTokenForm):
     # TODO client_id와 client_pw 체크 필요
     # TODO 추후 code 방식을 redis로 옮길 필요 있음
     code = CodeController.get(code=body.code)
-    
+    email = code.email
+    client_id = code.client_id
+    CodeController.delete(email=email, client_id=client_id)
     token = jwt.encode(
-        {"email": code.email, "client_id": code.client_id},
+        {"email": email, "client_id": client_id},
         key=Config.JWT_SECRET,
         algorithm=Config.JWT_ALGORITHEM,
     )
