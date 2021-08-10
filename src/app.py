@@ -18,7 +18,7 @@ app.add_middleware(
     allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["POST"],
-    allow_headers=["*"]
+    allow_headers=["*"],
 )
 
 email_regex = re.compile("(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)")
@@ -36,9 +36,7 @@ async def get_code(body: GetCodeForm):
 
     # API 연동
     try:
-        data: dict() = (
-            await HTMLGetter(Config.API_SERVER).get_json(email=email, pw=pw)
-        )
+        data: dict() = await HTMLGetter(Config.API_SERVER).get_json(email=email, pw=pw)
     except Exception as e:
         print(e)
         raise HTTPException(status_code=500, detail="API Server Error")
@@ -49,17 +47,14 @@ async def get_code(body: GetCodeForm):
     client_id = body.client_id
     data["client_id"] = client_id  # 클라이언트 id 지정
 
-    code = jwt.encode(
-        data, key=Config.JWT_SECRET, algorithm=Config.JWT_ALGORITHEM
-    )
+    code = jwt.encode(data, key=Config.JWT_SECRET, algorithm=Config.JWT_ALGORITHEM)
     CodeController.delete(client_id=client_id, email=email)
-    CodeController.add_code(client_id=client_id, email=email, code = code)
-
+    CodeController.add_code(client_id=client_id, email=email, code=code)
 
     # TODO code의 방식을 redis로 옮길 필요 다분
-    state = f"&state={body.state}"if body.state else ""
+    state = f"&state={body.state}" if body.state else ""
     redirect_url = f"{body.redirect_url}?code={code}{state}"  # 리다이렉트 url 지정
-    
+
     # 302코드로 리다이렉트
     return RedirectResponse(redirect_url, status_code=302)
 
@@ -79,10 +74,13 @@ async def get_token(body: GetTokenForm):
     )
 
     try:
-        data = {"header" : {"Authorization" : Config.API_SERVER_KEY}, "body" : {"target_token" : token}}
+        data = {
+            "header": {"Authorization": Config.API_SERVER_KEY},
+            "body": {"target_token": token},
+        }
         await HTMLGetter(f"{Config.API_SERVER}token/add-auth-token").get_json(data)
 
-    except Exception as e :
+    except Exception as e:
         print(e)
         raise HTTPException(status_code=500, detail="API Server Error")
 

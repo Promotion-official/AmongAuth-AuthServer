@@ -4,5 +4,5 @@ class Config:
     API_SERVER = ""
     JWT_ALGORITHEM = ""
     TIME_ZONE = "Asia/Seoul"
-    API_SERVER_KEY= ""
-    DB_URL=""
+    API_SERVER_KEY = ""
+    DB_URL = ""
