@@ -11,7 +11,7 @@ from misc import HTMLGetter, Config, GetTokenForm, GetCodeForm, CodeController
 
 app = FastAPI()
 
-app.add_middleware(DBSessionMiddleware)
+app.add_middleware(DBSessionMiddleware(db_url=Config.DB_URL))
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
