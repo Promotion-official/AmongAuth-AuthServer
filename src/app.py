@@ -26,7 +26,7 @@ async def get_code(body: GetCodeForm):
     # API 연동
     try:
         data: dict() = (
-            await HTMLGetter(Config.API_SERVER).set_data(email=email, pw=pw).get_json()
+            await HTMLGetter(Config.API_SERVER).get_json(email=email, pw=pw)
         )
     except Exception as e:
         print(e)
