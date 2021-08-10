@@ -1,14 +1,25 @@
+from aiohttp import client
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import RedirectResponse
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi_sqlalchemy import DBSessionMiddleware
 
 import re
 import jwt
 import datetime
 
-from misc import HTMLGetter, Config, GetTokenForm
-from misc.model import GetCodeForm
+from misc import HTMLGetter, Config, GetTokenForm, GetCodeForm, CodeController
 
 app = FastAPI()
+
+app.add_middleware(DBSessionMiddleware(db_url=Config.DB_URL))
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["POST"],
+    allow_headers=["*"],
+)
 
 email_regex = re.compile("(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)")
 pw_regex = re.compile("^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$")
@@ -25,50 +36,55 @@ async def get_code(body: GetCodeForm):
 
     # API 연동
     try:
-        data: dict() = (
-            await HTMLGetter(Config.API_SERVER).set_data(email=email, pw=pw).get_json()
-        )
+        data: dict() = await HTMLGetter(Config.API_SERVER).get_json(email=email, pw=pw)
     except Exception as e:
         print(e)
         raise HTTPException(status_code=500, detail="API Server Error")
 
-    # TODO DB 연동하여, 각 이메일과 client_id 쌍을 만들어, 액세스토큰 중복 체크
-
-    # data = {"pw" : pw, "email" : email} # API 서버 있을시에 해당 부분 주석 필요
     data["exp"] = datetime.datetime.utcnow() + datetime.timedelta(
         seconds=600
     )  # 10분의 기한
-    data["client_id"] = body.client_id  # 클라이언트 id 지정
+    client_id = body.client_id
+    data["client_id"] = client_id  # 클라이언트 id 지정
 
-    encoded_data = jwt.encode(
-        data, key=Config.JWT_SECRET, algorithm=Config.JWT_ALGORITHEM
-    )  # 토큰화
+    code = jwt.encode(data, key=Config.JWT_SECRET, algorithm=Config.JWT_ALGORITHEM)
+    CodeController.delete(client_id=client_id, email=email)
+    CodeController.add_code(client_id=client_id, email=email, code=code)
+
     # TODO code의 방식을 redis로 옮길 필요 다분
-
-    redirect_url = body.redirect_url  # 리다이렉트 url 지정
+    state = f"&state={body.state}" if body.state else ""
+    redirect_url = f"{body.redirect_url}?code={code}{state}"  # 리다이렉트 url 지정
 
     # 302코드로 리다이렉트
-    return RedirectResponse(f"{redirect_url}?code={encoded_data}", status_code=302)
+    return RedirectResponse(redirect_url, status_code=302)
 
 
 @app.post("/get_token")
 async def get_token(body: GetTokenForm):
     # TODO client_id와 client_pw 체크 필요
     # TODO 추후 code 방식을 redis로 옮길 필요 있음
-    try:
-        jwt_data: str = jwt.verify(
-            body.code, key=Config.JWT_SECRET, algorithms=Config.JWT_SECRET
-        )
-    except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="Unauthorized")
-    except jwt.InvalidTokenError:
-        raise HTTPException(status_code=401, detail="Unauthorized")
-
-    return jwt.encode(
-        {"email": jwt_data.email, "client_id": jwt_data.client_id},
+    code = CodeController.get(code=body.code)
+    email = code.email
+    client_id = code.client_id
+    CodeController.delete(email=email, client_id=client_id)
+    token = jwt.encode(
+        {"email": email, "client_id": client_id},
         key=Config.JWT_SECRET,
         algorithm=Config.JWT_ALGORITHEM,
     )
+
+    try:
+        data = {
+            "header": {"Authorization": Config.API_SERVER_KEY},
+            "body": {"target_token": token},
+        }
+        await HTMLGetter(f"{Config.API_SERVER}token/add-auth-token").get_json(data)
+
+    except Exception as e:
+        print(e)
+        raise HTTPException(status_code=500, detail="API Server Error")
+
+    return token
 
 
 # TODO client_pw 재발급 생성해야됨

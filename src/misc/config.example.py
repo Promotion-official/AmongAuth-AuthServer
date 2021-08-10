@@ -3,3 +3,6 @@ class Config:
     JWT_SECRET = ""
     API_SERVER = ""
     JWT_ALGORITHEM = ""
+    TIME_ZONE = "Asia/Seoul"
+    API_SERVER_KEY = ""
+    DB_URL = ""

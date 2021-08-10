@@ -6,11 +6,12 @@ class HTMLGetter:
         self.url = url
 
     async def get_json(self, **kwargs):
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 6.3; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36"
-        }
+        kwargs["header"][
+            "User-Agent"
+        ] = "Mozilla/5.0 (Windows NT 6.3; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36"
+
         async with aiohttp.ClientSession() as cs:
             html = await cs.post(
-                self.url, headers=headers, json={"id": kwargs["id"], "pw": kwargs["pw"]}
+                self.url, headers=kwargs["header"], json=kwargs["body"]
             )
             return await html.json()
