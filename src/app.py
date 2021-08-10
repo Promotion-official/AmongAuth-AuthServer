@@ -5,8 +5,7 @@ import re
 import jwt
 import datetime
 
-from misc import HTMLGetter, Config, GetTokenForm
-from misc.model import GetCodeForm
+from misc import HTMLGetter, Config, GetTokenForm, GetCodeForm
 
 app = FastAPI()
 
@@ -34,8 +33,6 @@ async def get_code(body: GetCodeForm):
 
     # TODO DB 연동하여, 각 이메일과 client_id 쌍을 만들어, 액세스토큰 중복 체크
 
-
-    # region replace to redis
     # data = {"pw" : pw, "email" : email} # API 서버 있을시에 해당 부분 주석 필요
     data["exp"] = datetime.datetime.utcnow() + datetime.timedelta(
         seconds=600
